@@ -26,10 +26,6 @@ namespace TwitchChatVideo
             Directory.CreateDirectory(BTTV.BaseDir);
             Directory.CreateDirectory(ChatVideo.OutputDirectory);
             Directory.CreateDirectory(ChatVideo.LogDirectory);
-            if(Directory.Exists(Updater.OldVersion))
-            {
-                Directory.Delete(Updater.OldVersion, true);
-            }
         }
     }
 }

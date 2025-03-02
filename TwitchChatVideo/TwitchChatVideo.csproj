@@ -112,7 +112,6 @@
     <Compile Include="NativeMethods.cs" />
     <Compile Include="Settings.cs" />
     <Compile Include="TwitchObjects\Bits.cs" />
-    <Compile Include="Updater.cs" />
     <Compile Include="Views\Converters.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="Views\PreviewWindow.xaml.cs">
