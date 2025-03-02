@@ -9,7 +9,7 @@ namespace TwitchChatVideo
     {
         public const string BaseDir = "./emotes/twitch/";
         const string EmoteSize = "1.0";
-        const string EmoteDownload = "https://static-cdn.jtvnw.net/emoticons/v1/{0}/{1}";
+        const string EmoteDownload = "https://static-cdn.jtvnw.net/emoticons/v2/{0}/default/light/{1}";
 
         private static Dictionary<string, Image> image_cache = new Dictionary<string, Image>()
         {

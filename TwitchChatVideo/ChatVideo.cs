@@ -1,17 +1,20 @@
 ﻿using Accord.Video.FFMPEG;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using static TwitchChatVideo.ChatHandler;
-using Text = TwitchChatVideo.ChatHandler.Text;
 
 namespace TwitchChatVideo
 {
-    public class ChatVideo : IDisposable
+    public class ChatVideo
     {
         public const string OutputDirectory = "./output/";
         public const string LogDirectory = "./logs/";
@@ -20,80 +23,76 @@ namespace TwitchChatVideo
         public const int HorizontalPad = 5;
         public const int VerticalPad = 5;
 
-        public const int FPS = 24;
+        public const int FPS = 30;
         public const VideoCodec Codec = VideoCodec.H264;
 
-        public string ID { get; set; }
+        public string JsonInputFileName { get; internal set; }
+        public string VideoOutputFileName { get; internal set; }
         public Color BGColor { get; internal set; }
         public Color ChatColor { get; internal set; }
         public int Width { get; internal set; }
         public int Height { get; internal set; }
-        public Font Font { get; internal set; }
-        public bool VodChat { get; internal set; }
+        public string FontFamily { get; internal set; }
+        public float FontSize { get; internal set; }
         public float LineSpacing { get; internal set; }
         public bool ShowBadges { get; internal set; }
 
         public ChatVideo(ViewModel vm)
         {
-            ID = vm.URL?.Split('/').LastOrDefault() ?? vm.URL ?? "";
+            JsonInputFileName = vm.FileName;
+            VideoOutputFileName = Path.ChangeExtension(JsonInputFileName, ".mp4");
             LineSpacing = vm.LineSpacing;
-            BGColor = Color.FromArgb(vm.BGColor.A, vm.BGColor.R, vm.BGColor.G, vm.BGColor.B);
-            ChatColor = Color.FromArgb(vm.ChatColor.A, vm.ChatColor.R, vm.ChatColor.G, vm.ChatColor.B);
-            Width = (int) vm.Width;
+            BGColor = vm.BGColor.ToDrawingColor();
+            ChatColor = vm.ChatColor.ToDrawingColor();
+            Width = (int)vm.Width;
             Height = (int)vm.Height;
-            Font = new Font(vm.FontFamily.ToString(), vm.FontSize);
-            VodChat = vm.VodChat;
+            FontFamily = vm.FontFamily.ToString();
+            FontSize = vm.FontSize;
             ShowBadges = vm.ShowBadges;
-        }
-
-        public void Dispose()
-        {
-            Font?.Dispose();
         }
 
         public async Task<bool> CreateVideoAsync(IProgress<VideoProgress> progress, CancellationToken ct)
         {
             return await Task.Run(async () =>
             {
-                var video = await TwitchDownloader.DownloadVideoInfoAsync(ID, progress, ct);
-
-                if (video?.ID == null)
+                Gql.Query query;
+                using (var f = new StreamReader(JsonInputFileName, Encoding.Default))
+                using (var r = new JsonTextReader(f))
                 {
-                    return false;
+                    query = JToken.ReadFrom(r).ToObject<Gql.Query>();
                 }
 
-                var bits = await TwitchDownloader.DownloadBitsAsync(video.StreamerID, progress, ct);
-                var badges = await TwitchDownloader.DownloadBadgesAsync(video.StreamerID, progress, ct);
-                var bttv = await BTTV.CreateAsync(video.StreamerID, progress, ct);
-                var ffz = await FFZ.CreateAsync(video.Streamer, progress, ct);
-                var messages = await TwitchDownloader.GetChatAsync(ID, video.Duration, progress, ct);
+                Bits bits = null; // await TwitchDownloader.DownloadBitsAsync(video.StreamerID, progress, ct);
+                Badges badges = new Badges(query.Video.Owner.Id, query.Badges.ToDictionary(b => b.ID)); // await TwitchDownloader.DownloadBadgesAsync(video.StreamerID, progress, ct);
+                var bttv = await BTTV.CreateAsync(query.Video.Owner.Id, progress, ct);
+                FFZ ffz = null; // var ffz = await FFZ.CreateAsync(video.Streamer, progress, ct);
 
-                if(ct.IsCancellationRequested)
+                if (ct.IsCancellationRequested)
                 {
                     return false;
                 }
 
                 using (var chat_handler = new ChatHandler(this, bttv, ffz, badges, bits))
                 {
-                    int current = 0;
-
                     try
                     {
-                        var drawables = messages?.Select(m =>
+                        var messages = new List<DrawableMessage>(query.Comments.Count);
+                        try
                         {
-                            progress?.Report(new VideoProgress(++current, messages.Count, VideoProgress.VideoStatus.Drawing));
-                            return chat_handler.MakeDrawableMessage(m);
-                        }).ToList();
-
-
-                        var max = (int)(FPS * video.Duration);
-
-                        var path = string.Format("{0}{1}-{2}.mp4", OutputDirectory, video.Streamer, video.ID);
-                        var result = await WriteVideoFrames(path, drawables, 0, max, progress, ct);
-                        progress?.Report(new VideoProgress(1, 1, VideoProgress.VideoStatus.CleaningUp));
-                        drawables.ForEach(d => d.Lines.ForEach(l => l.Drawables.ForEach(dr => dr.Dispose())));
-                    
-                        return result;
+                            foreach (var comment in query.Comments)
+                            {
+                                messages.Add(chat_handler.MakeDrawableMessage(comment));
+                                progress?.Report(new VideoProgress(messages.Count, query.Comments.Count, VideoProgress.VideoStatus.Rendering));
+                            }
+                            var result = await WriteVideoFrames(VideoOutputFileName, messages, 0, query.Video.LengthInSeconds * FPS, progress, ct);
+                            progress?.Report(new VideoProgress(1, 1, VideoProgress.VideoStatus.CleaningUp));
+                            return result;
+                        }
+                        finally
+                        {
+                            foreach (var message in messages)
+                                message.Dispose();
+                        }
                     }
                     catch (Exception e)
                     {
@@ -103,27 +102,30 @@ namespace TwitchChatVideo
                         }
 
                         return false;
-                    };
+                    }
                 }
             });
         }
 
-        public async Task<bool> WriteVideoFrames(string path, List<DrawableMessage> lines, int start_frame, int end_frame, IProgress<VideoProgress> progress = null, CancellationToken ct = default(CancellationToken))
+        public async Task<bool> WriteVideoFrames(string path, List<DrawableMessage> messages, long start_frame, long end_frame, IProgress<VideoProgress> progress = null, CancellationToken ct = default(CancellationToken))
         {
-            var drawable_messages = new Stack<DrawableMessage>();
-            var last_chat = 0;
-
             return await Task.Run(() =>
             {
                 using (var writer = new VideoFileWriter())
                 {
                     using (var bmp = new Bitmap(Width, Height))
                     {
+                        var previousMessages = new List<DrawableMessage>(messages.Count);
+
                         writer.Open(path, Width, Height, FPS, Codec);
                         var bounds = new Rectangle(0, 0, Width, Height);
 
-                        for (int i = start_frame; i <= end_frame; i++)
+                        int next_message = 0;
+
+                        for (long i = start_frame; i < end_frame; i++)
                         {
+                            var time = TimeSpan.FromSeconds((double)i / FPS);
+
                             if (ct.IsCancellationRequested)
                             {
                                 progress?.Report(new VideoProgress(0, 1, VideoProgress.VideoStatus.Idle));
@@ -132,27 +134,20 @@ namespace TwitchChatVideo
 
                             progress?.Report(new VideoProgress(i, end_frame, VideoProgress.VideoStatus.Rendering));
 
-                            if (last_chat < lines.Count)
+                            if (next_message < messages.Count)
                             {
-                                // Note that this intentionally pulls at most one chat per frame
-                                var chat = lines.ElementAt(last_chat);
-                                if (!chat.Live && !VodChat)
+                                var message = messages[next_message];
+                                if (message.Start.TotalSeconds * FPS <= i)
                                 {
-                                    last_chat++;
-
+                                    previousMessages.Add(message);
+                                    next_message++;
                                 }
-                                else if (chat.StartFrame < i)
-                                {
-                                    drawable_messages.Push(chat);
-                                    last_chat++;
-                                }
-
                             }
 
-                            DrawFrame(bmp, drawable_messages, i);
+                            DrawFrame(bmp, previousMessages, time);
+
                             writer.WriteVideoFrame(bmp);
                         }
-
 
                         return true;
                     }
@@ -164,83 +159,51 @@ namespace TwitchChatVideo
 
         public static void DrawPreview(ViewModel vm, Bitmap bmp)
         {
-            using (var chat = new ChatVideo(vm))
+            var chat = new ChatVideo(vm);
+
+            var messages = ChatHandler.MakeSampleChat(chat);
+            try
             {
-                var messages = ChatHandler.MakeSampleChat(chat);
                 chat.DrawFrame(bmp, messages);
+            }
+            finally
+            {
                 foreach (var msg in messages)
-                {
-                    msg.Lines.ForEach(m => m.Drawables.ForEach(d => d.Dispose()));
-                }
+                    msg.Dispose();
             }
         }
 
         /// <summary>
         /// Draws a list of chat messages on a supplied Bitmap
         /// </summary>
-        /// <param name="bmp"></param>
-        /// <param name="lines"></param>
-        /// <param name="frame"></param>
-        public void DrawFrame(Bitmap bmp, Stack<DrawableMessage> lines, int frame = 0)
+        public void DrawFrame(Bitmap bitmap, List<DrawableMessage> drawables, TimeSpan time = default(TimeSpan))
         {
-
-            double height = 0;
-
-            var messages = lines.TakeWhile(x => {
-                var passes = height < (Height - VerticalPad * 2);
-                height += x.Lines.LastOrDefault().Height + LineSpacing;
-                return passes;
-            });
-
-            using (var drawing = Graphics.FromImage(bmp))
+            using (var g = Graphics.FromImage(bitmap))
             {
-                drawing.Clear(BGColor);
+                g.Clear(BGColor);
 
-                float local_y = Height - VerticalPad;
+                PointF point = new PointF(0, bitmap.Height - VerticalPad);
 
-                foreach (var message in messages)
+                for (int i = drawables.Count; --i >= 0;)
                 {
-                    var last_line = message.Lines.LastOrDefault();
-                    var message_y = local_y - (last_line.OffsetY + last_line.Height + LineSpacing);
-                    local_y = message_y;
-
-                    foreach (var line in message.Lines)
+                    var message = drawables[i];
+                    point.Y -= message.MainBitmap.Height;
+                    g.DrawImage(message.MainBitmap, point);
+                    foreach (var eb in message.EmbeddedBitmaps)
                     {
-                        foreach (var drawable in line.Drawables)
-                        {
-                            var x = line.OffsetX + drawable.OffsetX;
-                            var y = line.OffsetY + drawable.OffsetY + message_y;
-
-                            if (drawable is User)
-                            {
-                                var user = drawable as User;
-                                drawing.DrawString(user.Name, user.Font, user.Brush, x, y);
-
-                            }
-                            else if (drawable is Badge)
-                            {
-                                var badge = drawable as Badge;
-                                drawing.DrawImage(badge.Image, new RectangleF(x, y, badge.Image.Width, badge.Image.Height));
-                            }
-                            else if (drawable is Text)
-                            {
-                                var msg = drawable as Text;
-                                drawing.DrawString(msg.Message, msg.Font, msg.Brush, x, y);
-                            }
-                            else if (drawable is Emote)
-                            {
-                                var emote = drawable as Emote;
-                                emote.SetFrame(frame);
-                                drawing.DrawImage(emote.Image, new RectangleF(x, y, emote.Image.Width, emote.Image.Height));
-                            }
-                        }
+                        eb.SetFrame(time);
+                        g.DrawImage(eb.Image, point.X + eb.Point.X, point.Y + eb.Point.Y, eb.Image.Width, eb.Image.Height);
                     }
-
+                    point.Y -= LineSpacing;
+                    if (point.Y <= 0) break;
                 }
 
                 using (var brush = new SolidBrush(BGColor))
                 {
-                    drawing.FillRectangle(brush, 0, 0, Width, VerticalPad);
+                    g.FillRectangle(brush, new Rectangle(0, 0, Width, VerticalPad));
+                    g.FillRectangle(brush, new Rectangle(0, 0, HorizontalPad, Height));
+                    g.FillRectangle(brush, new Rectangle(Width - HorizontalPad, 0, Width, Height));
+                    g.FillRectangle(brush, new Rectangle(0, Height - VerticalPad, Width, Height));
                 }
             }
         }

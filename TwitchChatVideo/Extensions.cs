@@ -2,6 +2,9 @@
 using System.Linq;
 using System.ComponentModel;
 using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
+using Color = System.Windows.Media.Color;
 
 namespace TwitchChatVideo
 {
@@ -16,18 +19,24 @@ namespace TwitchChatVideo
             return attribute == null ? value.ToString() : attribute.Description;
         }
 
-        public static Color Contrast(this Color value, Color other)
+        public static byte[] ToByteArray(this Bitmap bitmap)
         {
-            var r_dif = (byte) (value.R - other.R);
-            var g_dif = (byte) (value.G - other.G);
-            var b_dif = (byte) (value.B - other.B);
+            var stream = bitmap.ToMemoryStream();
+            stream.Capacity = (int)stream.Length;
+            return stream.GetBuffer();
+        }
 
-            if(r_dif < 64 && g_dif < 64 && b_dif < 64)
-            {
-                return Color.FromArgb((value.R + 128) % 255, (value.G + 128) % 255, (value.B + 128) % 255);
-            }
+        public static System.Drawing.Color ToDrawingColor(this Color color)
+        {
+            return System.Drawing.Color.FromArgb(color.A, color.R, color.G, color.B);
+        }
 
-            return value;
+        public static MemoryStream ToMemoryStream(this Bitmap bitmap)
+        {
+            var memoryStream = new MemoryStream();
+            bitmap.Save(memoryStream, ImageFormat.Bmp);
+            memoryStream.Position = 0;
+            return memoryStream;
         }
     }
 }

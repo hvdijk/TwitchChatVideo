@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using TwitchChatVideo.Properties;
 
 namespace TwitchChatVideo
@@ -13,7 +14,8 @@ namespace TwitchChatVideo
 
         public static Image GetEmoji(string str)
         {
-            return emoji_dictionary.ContainsKey(str) ? emoji_dictionary[str] : null;
+            emoji_dictionary.TryGetValue(str, out var emoji);
+            return emoji;
         }
 
         private static Dictionary<string, Image> emoji_dictionary = new Dictionary<string, Image>()

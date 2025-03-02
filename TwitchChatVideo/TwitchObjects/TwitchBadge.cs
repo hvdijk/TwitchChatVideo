@@ -3,26 +3,27 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
+using System.Text;
 using TwitchChatVideo.Properties;
 
 namespace TwitchChatVideo
 {
-    public class TwitchBadge
-    {
-        [JsonProperty("image_url_1x")]
-        public String URL { get; set; }
-        [JsonProperty("title")]
-        public String Name { get; set; }
-    }
-
     public class Badges
     {
         public const String BaseDir = "./badges/";
-        private Dictionary<String, Dictionary<String, TwitchBadge>> lookup;
+        private Dictionary<String, Gql.Badge> lookup;
         private Dictionary<String, Image> image_cache;
         private String id;
 
-        public Badges(String id, Dictionary<String, Dictionary<String, TwitchBadge>> lookup)
+        public Badges(String id)
+        {
+            this.id = id;
+            this.lookup = new Dictionary<string, Gql.Badge>();
+            this.image_cache = new Dictionary<string, Image>();
+            Directory.CreateDirectory(BaseDir + id);
+        }
+
+        public Badges(String id, Dictionary<String, Gql.Badge> lookup)
         {
             this.id = id;
             this.lookup = lookup;
@@ -61,24 +62,24 @@ namespace TwitchChatVideo
 
         };
 
-        public Image Lookup(String type, String version)
+        public Image Lookup(String badgeID)
         {
-            var concat = id + "/" + type + "-" + version;
+            var concat = id + "/" + badgeID;
 
             if (image_cache.ContainsKey(concat))
             {
                 return image_cache[concat];
             }
 
-            var badge = lookup.ContainsKey(type) && lookup[type].ContainsKey(version) ? lookup[type][version] : default(TwitchBadge);
-
-            if (badge.Name == string.Empty)
+            if (!lookup.TryGetValue(badgeID, out var badge))
             {
-                return null;
+                if (badgeID == "Ozs=")
+                    return null;
+                throw new ApplicationException($"Badge {badgeID} not found");
             }
 
-            var local_path = BaseDir + concat;
-            var img = TwitchDownloader.GetImage(local_path, badge.URL);
+            var local_path = BaseDir + concat + ".png";
+            var img = TwitchDownloader.GetImage(local_path, badge.Image1x);
 
             image_cache[concat] = img;
 

@@ -1,12 +1,10 @@
-﻿using Accord.Video.FFMPEG;
+﻿using Microsoft.Win32;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
@@ -18,7 +16,7 @@ namespace TwitchChatVideo
 {
     public class ViewModel : INotifyPropertyChanged
     {
-        private string url;
+        private string fileName;
         private uint width;
         private uint height;
         private FontFamily font_family;
@@ -26,12 +24,12 @@ namespace TwitchChatVideo
         private Color bg_color;
         private Color chat_color;
         private bool show_badges;
-        private bool vod_chat;
         private float spacing;
         private bool running;
         private long total;
         private long progress;
         private VideoStatus status;
+        private Visibility update_available;
         private bool allow_interaction;
 
         private CancellationTokenSource CancellationTokenSource { get; set; }
@@ -39,7 +37,7 @@ namespace TwitchChatVideo
         public long Total { get => total; set => Set(ref total, value, false); }
         public long Progress { get => progress; set => Set(ref progress, value, false); }
         public VideoStatus Status { get => status; set => Set(ref status, value, false); }
-        public String URL{ get => url; set => Set(ref url, value, false); }
+        public String FileName { get => fileName; set => Set(ref fileName, value, false); }
 
         public uint Width { get => width; set => Set(ref width, Math.Min(3000, value)); }
         public uint Height { get => height; set => Set(ref height, Math.Min(3000, value)); }
@@ -48,14 +46,15 @@ namespace TwitchChatVideo
         public Color BGColor { get => bg_color; set => Set(ref bg_color, value); }
         public Color ChatColor { get => chat_color; set => Set(ref chat_color, value); }
         public bool ShowBadges { get => show_badges; set => Set(ref show_badges, value); }
-        public bool VodChat { get => vod_chat; set => Set(ref vod_chat, value); }
         public float LineSpacing { get => spacing; set => Set(ref spacing, value); }
         public bool Running { get => running; set => Set(ref running, value); }
+        public Visibility UpdateVisibility { get => update_available; set => Set(ref update_available, value); }
         public bool AllowInteraction { get => allow_interaction; set => Set(ref allow_interaction, value); }
 
         public ICommand CancelVideo { get; }
         public ICommand MakeVideo { get; }
         public ICommand MakePreviewWindow { get; }
+        public ICommand SelectVideo { get; }
 
         public BitmapSource PreviewImage {
             get {
@@ -96,6 +95,10 @@ namespace TwitchChatVideo
 
             public void Execute(object param) => execute(param);
 
+            public void RaiseCanExecuteChanged(EventArgs e)
+            {
+                CanExecuteChanged?.Invoke(this, e);
+            }
         }
 
         public ViewModel()
@@ -110,11 +113,11 @@ namespace TwitchChatVideo
             BGColor = settings.BGColor;
             ChatColor = settings.ChatColor;
             ShowBadges = settings.ShowBadges;
-            VodChat = settings.VodChat;
 
             Total = 1;
             Progress = 0;
 
+            SelectVideo = new DelegateCommand(ExecuteSelectVideo);
             MakeVideo = new DelegateCommand(ExecuteMakeVideo);
             CancelVideo = new DelegateCommand(ExecuteCancelVideo);
             MakePreviewWindow = new DelegateCommand(ExecuteMakePreviewWindow);
@@ -162,7 +165,7 @@ namespace TwitchChatVideo
                 {
                     sw.Stop();
                     var elapsed = sw.Elapsed;
-                    URL = "";
+                    FileName = "";
                     MessageBox.Show(String.Format("Video completed in {0:00}:{1:00}:{2:00}!", elapsed.Hours, elapsed.Minutes, elapsed.Seconds));
                 }
 
@@ -171,6 +174,16 @@ namespace TwitchChatVideo
                 Status = VideoStatus.Idle;
                 CancellationTokenSource = null;
                 Running = false;
+            }
+        }
+
+        private void ExecuteSelectVideo(object arg)
+        {
+            var dialog = new OpenFileDialog();
+            dialog.Filter = "JSON files (*.json)|*.json";
+            if (dialog.ShowDialog() == true)
+            {
+                FileName = dialog.FileName;
             }
         }
 

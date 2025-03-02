@@ -28,7 +28,6 @@ namespace TwitchChatVideo
                 BGColor = Color.FromRgb(0, 0, 0),
                 ChatColor = Color.FromRgb(255, 255, 255),
                 LineSpacing = 4,
-                VodChat = false,
                 ShowBadges = true,
             };
         }
@@ -43,7 +42,6 @@ namespace TwitchChatVideo
             FontSize = vm.FontSize;
             LineSpacing = vm.LineSpacing;
             ShowBadges = vm.ShowBadges;
-            VodChat = vm.VodChat;
         }
 
         public static void Save(ViewModel vm)
@@ -65,7 +63,6 @@ namespace TwitchChatVideo
         public float FontSize { get; set; }
         public float LineSpacing { get; set; }
         public bool ShowBadges { get; set; }
-        public bool VodChat { get; set; }
     }
 }
 

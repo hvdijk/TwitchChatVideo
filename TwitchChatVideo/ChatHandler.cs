@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using DirectN;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -7,187 +8,33 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using TwitchChatVideo.Gql;
 using TwitchChatVideo.Properties;
 
 namespace TwitchChatVideo
 {
-    public class ChatHandler : IDisposable
+    public partial class ChatHandler : IDisposable
     {
-        private static Image text_sizes = new Bitmap(1, 1);
-        private static Graphics g = Graphics.FromImage(text_sizes);
-
-        public Font Font { get; }
-        public Font BoldFont { get; }
+        public IComObject<IDWriteFactory> DWriteFactory { get; }
+        public IComObject<ID2D1Factory> D2D1Factory { get; }
+        public IComObject<IDWriteTextFormat> TextFormat { get; }
         public Color ChatColor { get; }
         public Color BGColor { get; }
         public float Spacing { get; }
         public bool ShowBadges { get; }
-        public bool VodChat { get; }
         public float Width { get; }
         public BTTV BTTV { get; }
         public FFZ FFZ { get; }
         public Badges Badges { get; }
         public Bits Bits { get; }
 
-        public class Line
-        {
-            private const int MinimumLineHeight = 20;
-            public float OffsetX { get; }
-            public float OffsetY { get; }
-            public List<Drawable> Drawables { get; }
-
-            public float Height { get; }
-
-            public Line(float x, float y, float height, List<Drawable> dl)
-            {
-                Height = Math.Max(height, MinimumLineHeight);
-                OffsetX = x;
-                OffsetY = y;
-                Drawables = dl;
-            }
-        }
-
-        public abstract class Drawable : IDisposable
-        {
-            public float OffsetX { get; set; }
-            public float OffsetY { get; set; }
-            public abstract float Height { get; }
-
-            public abstract void Dispose();
-        }
-
-        public class Emote : Drawable
-        {
-            public Image Image { get; }
-            public override float Height => Image.Height;
-
-            private int max_frames;
-            private float frame_delay;
-            private System.Drawing.Imaging.FrameDimension dimension;
-            private const int FRAME_DELAY_ID = 0x5100;
-
-            public Emote(float offset_x, float offset_y, Image image)
-            {
-                OffsetX = offset_x;
-                OffsetY = offset_y;
-                Image = image;
-
-                dimension = new System.Drawing.Imaging.FrameDimension(image.FrameDimensionsList[0]);
-                max_frames = image.GetFrameCount(dimension);
-                if (max_frames > 1)
-                {
-                    var fd_bytes = image.GetPropertyItem(FRAME_DELAY_ID);
-                    frame_delay = fd_bytes != null ? BitConverter.ToInt32(fd_bytes.Value, 0) : 0;
-                }
-                else
-                {
-                    frame_delay = 0;
-                }
-            }
-
-            public void SetFrame(int f)
-            {
-                if (max_frames > 1)
-                {
-                    Image.SelectActiveFrame(dimension, f % max_frames);
-                }
-            }
-
-            public override void Dispose()
-            {
-            }
-        }
-
-        public class Badge : Drawable
-        {
-            public Image Image { get; }
-            public override float Height => Image.Height;
-
-            public Badge(float offset_x, float offset_y, Image image)
-            {
-                OffsetX = offset_x;
-                OffsetY = offset_y;
-                Image = image;
-            }
-
-            public override void Dispose()
-            {
-            }
-        }
-
-        public class User : Drawable
-        {
-            public override float Height { get; }
-            public string Name { get; }
-            public Brush Brush { get; }
-            public Font Font { get; }
-
-            public User(float offset_x, float offset_y, float height, string name, Color color, Font f)
-            {
-                Height = height;
-                OffsetX = offset_x;
-                OffsetY = offset_y;
-                Name = name;
-                Font = (Font) f.Clone();
-                Brush = new SolidBrush(color);
-            }
-
-            public override void Dispose()
-            {
-                Brush?.Dispose();
-                Font?.Dispose();
-            }
-        }
-
-        public class Text : Drawable
-        {
-            public override float Height { get; }
-            public string Message { get; }
-            public Brush Brush { get; }
-            public Font Font { get; }
-
-            public Text(float offset_x, float offset_y, float height, string text, Color color, Font f)
-            {
-                OffsetX = offset_x;
-                OffsetY = offset_y;
-                Message = text;
-                Font = (Font) f.Clone();
-                Height = height;
-                Brush = new SolidBrush(color);
-            }
-
-            public override void Dispose()
-            {
-                Brush?.Dispose();
-                Font?.Dispose();
-            }
-        }
-
-        /* 
-         * For whatever reason creating a StringFormat identical to what's sepecifed by StringFormat.GenericTypographic
-         * doesn't remove the padding added to string measuring, but creating a format using it does it just fine.
-         */
-        private static readonly StringFormat format = new StringFormat(StringFormat.GenericTypographic) {
-            FormatFlags = StringFormatFlags.FitBlackBox | StringFormatFlags.NoClip | StringFormatFlags.LineLimit | StringFormatFlags.MeasureTrailingSpaces,
-            Alignment = StringAlignment.Near,
-            LineAlignment = StringAlignment.Near,
-            Trimming = StringTrimming.None,
-       
-        };
-
-        public static SizeF MeasureText(string text, Font font, int max)
-        {
-            lock (g) {
-                return g.MeasureString(text, font, max, format);
-            }
-        }
-
         public ChatHandler(ChatVideo cv, BTTV bttv, FFZ ffz, Badges badges, Bits bits)
         {
-            Font = (Font) cv.Font.Clone();
-            BoldFont = new Font(Font, FontStyle.Bold);
-            ChatColor = Color.FromArgb(cv.ChatColor.A, cv.ChatColor.R, cv.ChatColor.G, cv.ChatColor.B);
-            BGColor = Color.FromArgb(cv.BGColor.A, cv.BGColor.R, cv.BGColor.G, cv.BGColor.B);
+            DWriteFactory = DWriteFunctions.DWriteCreateFactory();
+            D2D1Factory  = D2D1Functions.D2D1CreateFactory();
+            TextFormat = DWriteFactory.CreateTextFormat(cv.FontFamily, cv.FontSize * 96 / 72);
+            ChatColor = cv.ChatColor;
+            BGColor = cv.BGColor;
             Width = cv.Width;
             Spacing = cv.LineSpacing;
             ShowBadges = cv.ShowBadges;
@@ -199,204 +46,167 @@ namespace TwitchChatVideo
 
         public void Dispose()
         {
-            Font?.Dispose();
-            BoldFont?.Dispose();
+            TextFormat?.Dispose();
+            D2D1Factory?.Dispose();
+            DWriteFactory?.Dispose();
         }
 
-        public DrawableMessage MakeDrawableMessage(ChatMessage message)
+        static readonly Regex Words = new Regex(@"\w+", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+        public DrawableMessage MakeDrawableMessage(VideoComment comment)
         {
-            var lines = new List<Line>();
-
-            // \p{Cs} or \p{Surrogate}: one half of a surrogate pair in UTF-16 encoding.
-            var words = Regex.Replace(message.Text, @"\p{Cs}\p{Cs}", m =>
-            {   
-                message.Emotes?.Where(e => e.Begin > m.Index)?.ToList().ForEach(e2 => e2.Begin += 1);
-                return Emoji.Exists(m.Value) ? ' ' + m.Value + ' ' : "?";
-            }).Split(' ').Where(s => s != string.Empty);
-
             var builder = new StringBuilder();
+            Action<IDWriteTextLayout> OnCreateTextLayout = null;
+            Action<IDWriteTextLayout, ID2D1DCRenderTarget> OnDrawTextLayout = null;
 
-            float x = ChatVideo.HorizontalPad;
-            float y = 0;
-            float maximum_y_offset = 0;
+            var embeddedBitmaps = new List<DrawableMessage.EmbeddedImage>();
 
-            int cursor = 0;
-
-            List<Drawable> dl = new List<Drawable>();
-
-            var user_tag = message.Name + ": ";
-            var user_size = MeasureText(user_tag, BoldFont, (int) Width);
-
-            if (ShowBadges)
+            foreach (var badge in comment.Message.UserBadges ?? Enumerable.Empty<Gql.Badge>())
             {
-                message.Badges?.ForEach(b =>
+                var badgeImage = Badges.Lookup(badge.ID);
+                if (badgeImage != null)
                 {
-                    var img = Badges?.Lookup(b.ID, b.Version);
-                    if (img != null) {
-                        var align_vertical = user_size.Height * .5f - img.Height * .5f;
-                        if (align_vertical < 0)
-                        {
-                            maximum_y_offset = Math.Max(Math.Abs(align_vertical), maximum_y_offset);
-                        }
-                        var badge = new Badge(x, align_vertical, img);
-                        dl.Add(badge);
-                        x += img.Width + ChatVideo.BadgePad;
-                    }
-                });
+                    var badgeStart = builder.Length;
+                    builder.Append("*");
+                    var badgeEnd = builder.Length;
+
+                    var range = new DWRITE_TEXT_RANGE((uint)badgeStart, (uint)badgeEnd - (uint)badgeStart);
+
+                    var embeddedBitmap = new DrawableMessage.EmbeddedImage(badgeImage);
+                    embeddedBitmaps.Add(embeddedBitmap);
+
+                    OnCreateTextLayout += tl =>
+                    {
+                        tl.SetInlineObject(embeddedBitmap, range).ThrowOnError();
+                    };
+                }
             }
 
-            var color = Colors.GetCorrected(message.Color, BGColor, message.Name);
-
-            dl.Add(new User(x, y, user_size.Height, user_tag, color, BoldFont));
-            x += user_size.Width;
-
-            Action new_line = delegate
             {
-                y += maximum_y_offset;
-                var line = new Line(ChatVideo.HorizontalPad, y, Font.Height + maximum_y_offset, dl);
-                lines.Add(line);
-                y += maximum_y_offset + line.Height;
-                maximum_y_offset = 0;
-                dl = new List<Drawable>();
-                x = ChatVideo.HorizontalPad;
-            };
+                var userStart = builder.Length;
+                builder.Append(comment.Commenter.DisplayName);
+                builder.Append(": ");
+                var userEnd = builder.Length;
 
-            Action empty_builder = delegate
-            {
-                var txt = builder.ToString();
-                var sz = MeasureText(txt, Font, (int) Width);
-                dl.Add(new Text(x, 0, sz.Height, txt, ChatColor, Font));
-                builder.Clear();
-                x += sz.Width;
-            };
+                var range = new DWRITE_TEXT_RANGE((uint)userStart, (uint)userEnd - (uint)userStart);
 
-            foreach (var word in words)
-            {
-                var emote = Emoji.GetEmoji(word) ?? FFZ?.GetEmote(word) ?? BTTV?.GetEmote(word) ??
-                    TwitchEmote.GetEmote(message.Emotes?.FirstOrDefault(e => e.Begin == cursor)?.ID);
-
-                cursor += word.Length + 1;
-
-                if(emote != null)
+                OnCreateTextLayout += tl =>
                 {
-                    if (builder.Length > 0)
-                    {
-                        builder.Append(' ');
-                        empty_builder();
-                    }
+                    tl.SetFontWeight(DWRITE_FONT_WEIGHT.DWRITE_FONT_WEIGHT_BOLD, range);
+                };
 
-                    if (x + emote.Width + 2 * ChatVideo.HorizontalPad > Width)
-                    {
-                        new_line();
-                    }
+                if (comment.Message.UserColor != null)
+                {
+                    var color = Colors.GetCorrected(comment.Message.UserColor.Value, BGColor, comment.Commenter.DisplayName);
 
-                    var align_vertical = Font.Height * .5f - emote.Height * .5f;
-                    if (align_vertical < 0)
+                    OnDrawTextLayout += (tl, rt) =>
                     {
-                        maximum_y_offset = Math.Max(Math.Abs(align_vertical), maximum_y_offset);
-                    }
-                    x += ChatVideo.EmotePad;
-                    dl.Add(new Emote(x, align_vertical, emote));
-                    x += emote.Width;
-
-                    continue;
+                        using (var brush = rt.CreateSolidColorBrush<ID2D1SolidColorBrush>(new _D3DCOLORVALUE(color.ToArgb())))
+                            tl.SetDrawingEffect(brush.Object, range);
+                    };
                 }
+            }
 
-                var cheer = message.Content.Bits > 0 ? Bits?.GetCheer(word) : default(Bits.Cheer);
+            foreach (var fragment in comment.Message.Fragments ?? Enumerable.Empty<VideoComment.VideoCommentMessageFragment>())
+            {
+                var fragmentStart = builder.Length;
+                builder.Append(fragment.Text);
+                var fragmentEnd = builder.Length;
 
-                if (cheer?.Amount > 0)
+                if (fragment.Emote != null)
                 {
-                    var ch = cheer.Value;
+                    var range = new DWRITE_TEXT_RANGE((uint)fragmentStart, (uint)fragmentEnd - (uint)fragmentStart);
 
-                    if (builder.Length > 0)
+                    var embeddedBitmap = new DrawableMessage.EmbeddedImage(TwitchEmote.GetEmote(fragment.Emote.Value.EmoteID));
+                    embeddedBitmaps.Add(embeddedBitmap);
+
+                    OnCreateTextLayout += tl =>
                     {
-                        builder.Append(' ');
-                        empty_builder();
-                    }
-
-                    if (x + ch.Emote.Width + 2 * ChatVideo.HorizontalPad > Width)
-                    {
-                        new_line();
-                    }
-
-                    var align_vertical = Font.Height * .5f - ch.Emote.Height * .5f;
-                    if (align_vertical < 0)
-                    {
-                        maximum_y_offset = Math.Max(Math.Abs(align_vertical), maximum_y_offset);
-                    }
-                    x += ChatVideo.EmotePad;
-                    dl.Add(new Emote(x, align_vertical, ch.Emote));
-                    x += ch.Emote.Width;
-
-                    var cheer_amount = cheer?.Amount.ToString();
-                    var sz = MeasureText(cheer_amount, Font, (int) Width);
-                    if (x + sz.Width + 2 * ChatVideo.HorizontalPad >= Width)
-                    {
-                        new_line();
-                    }
-                    dl.Add(new Text(x, 0, sz.Height, cheer_amount, ch.Color, Font));
-                    x += sz.Width;
-                    continue;
-                }
-
-                var text = builder.ToString();
-                var word_tag = word + ' ';
-                var size = MeasureText(text + word_tag, Font, (int) Width);
-                if (x + size.Width + 2 * ChatVideo.HorizontalPad >= Width)
-                {
-                    empty_builder();
-                    new_line();
-                    builder.Append(word_tag);
+                        tl.SetInlineObject(embeddedBitmap, range);
+                    };
                 }
                 else
                 {
-                    builder.Append(word_tag);
+                    foreach (Match word in Words.Matches(fragment.Text))
+                    {
+                        var emote = BTTV?.GetEmote(word.Value) ?? FFZ?.GetEmote(word.Value);
+                        if (emote != null)
+                        {
+                            var range = new DWRITE_TEXT_RANGE((uint)fragmentStart + (uint)word.Index, (uint)word.Length);
+
+                            var embeddedBitmap = new DrawableMessage.EmbeddedImage(emote);
+                            embeddedBitmaps.Add(embeddedBitmap);
+
+                            OnCreateTextLayout += tl =>
+                            {
+                                tl.SetInlineObject(embeddedBitmap, range);
+                            };
+                        }
+                    }
                 }
-        }
-
-            if (builder.Length > 0)
-            {
-                var text = builder.ToString();
-                var size = MeasureText(text, Font, (int) Width);
-                dl.Add(new Text(x, 0, size.Height, text, ChatColor, Font));
             }
 
-            if(dl.Count > 0)
+            var textLayout = DWriteFactory.CreateTextLayout(TextFormat, builder.ToString(), maxWidth: Width - 2 * ChatVideo.HorizontalPad);
+            OnCreateTextLayout?.Invoke(textLayout.Object);
+            textLayout.Object.GetMetrics(out var textMetrics).ThrowOnError();
+
+            var mainBitmap = new Bitmap((int)Math.Ceiling(Width), (int)Math.Ceiling(textMetrics.height));
+
+            var renderTargetProperties = default(D2D1_RENDER_TARGET_PROPERTIES);
+            renderTargetProperties.pixelFormat.format = DXGI_FORMAT.DXGI_FORMAT_B8G8R8A8_UNORM;
+            renderTargetProperties.pixelFormat.alphaMode = D2D1_ALPHA_MODE.D2D1_ALPHA_MODE_IGNORE;
+
+            using (var renderTarget = D2D1Factory.CreateDCRenderTarget(renderTargetProperties))
+            using (var graphics = Graphics.FromImage(mainBitmap))
             {
-                lines.Add(new Line(ChatVideo.HorizontalPad, y + maximum_y_offset, Font.Height + maximum_y_offset, dl));
+                var handle = graphics.GetHdc();
+                try
+                {
+                    renderTarget.Object.BindDC(handle, new tagRECT(0, 0, mainBitmap.Width, mainBitmap.Height));
+                    renderTarget.BeginDraw();
+                    try
+                    {
+                        renderTarget.Clear(new _D3DCOLORVALUE(BGColor.ToArgb()));
+                        using (var chatBrush = renderTarget.CreateSolidColorBrush(new _D3DCOLORVALUE(ChatColor.ToArgb())))
+                        {
+                            OnDrawTextLayout?.Invoke(textLayout.Object, renderTarget.Object);
+                            renderTarget.DrawTextLayout(new D2D_POINT_2F(ChatVideo.HorizontalPad, 0), textLayout, chatBrush, D2D1_DRAW_TEXT_OPTIONS.D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
+                        }
+                    }
+                    finally
+                    {
+                        renderTarget.EndDraw();
+                    }
+                }
+                finally
+                {
+                    graphics.ReleaseHdc(handle);
+                }
             }
 
-            return new DrawableMessage {
-                Lines = lines,
-                StartFrame = (uint) (message.TimeOffset * ChatVideo.FPS),
-                Live = message.Source == "chat",
+            return new DrawableMessage
+            {
+                Start = TimeSpan.FromSeconds(comment.ContentOffsetSeconds),
+                MainBitmap = mainBitmap,
+                EmbeddedBitmaps = embeddedBitmaps,
             };
         }
 
-        public struct DrawableMessage
-        {
-            public List<Line> Lines { get; internal set; }
-            public uint StartFrame { get; internal set; }
-            public bool Live { get; internal set; }
-        }
-
-        public static Stack<DrawableMessage> MakeSampleChat(ChatVideo cv)
+        public static List<DrawableMessage> MakeSampleChat(ChatVideo cv)
         {
             using (var ch = new ChatHandler(cv, null, FFZ.SampleFFZ, Badges.SampleBadges, null))
             {
-                var lines = new Stack<DrawableMessage>();
-                MakeSampleMessages().ForEach(m => lines.Push(ch.MakeDrawableMessage(m)));
-                return lines;
+                return MakeSampleComments().ConvertAll(m => ch.MakeDrawableMessage(m));
             }
         }
 
 
-        public static List<ChatMessage> MakeSampleMessages()
+        public static List<VideoComment> MakeSampleComments()
         {
             using (var f = new StreamReader(new MemoryStream(Resources.SampleChat), Encoding.Default))
             using (var r = new JsonTextReader(f))
             {
-                return JToken.ReadFrom(r).ToObject<List<ChatMessage>>();
+                return JToken.ReadFrom(r).ToObject<List<VideoComment>>();
             }
         }
     }

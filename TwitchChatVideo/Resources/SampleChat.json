@@ -1,340 +1,330 @@
 ﻿[
   {
     "commenter": {
-      "display_name": "ImThatOneGuy64"
+      "displayName": "ImThatOneGuy64"
     },
-    "source": "chat",
     "message": {
-      "body": "i join and you guys are talking about milk D:",
-      "is_action": false,
-      "user_badges": [
+      "fragments": [
         {
-          "_id": "moderator",
-          "version": "1"
-        },
-        {
-          "_id": "bits",
-          "version": "1"
+          "text": "i join and you guys are talking about milk D:"
         }
       ],
-      "user_color": "#7D7DFE"
-    },
-    "more_replies": false
+      "userBadges": [
+        {
+          "id": "moderator-1"
+        },
+        {
+          "id": "bits-1"
+        }
+      ],
+      "userColor": "#7D7DFE"
+    }
   },
   {
     "commenter": {
-      "display_name": "AntiLink"
+      "displayName": "AntiLink"
     },
-    "source": "chat",
     "message": {
-      "body": "optimal",
-      "is_action": false,
-      "user_badges": [
+      "fragments": [
         {
-          "_id": "moderator",
-          "version": "1"
-        },
-        {
-          "_id": "subscriber",
-          "version": "1"
+          "text": "optimal"
         }
       ],
-      "user_color": "#DAA520"
-    },
-    "more_replies": false
+      "userBadges": [
+        {
+          "id": "moderator-1"
+        },
+        {
+          "id": "subscriber-1"
+        }
+      ],
+      "userColor": "#DAA520"
+    }
   },
   {
     "commenter": {
-      "display_name": "SOUPOSTRICH"
+      "displayName": "SOUPOSTRICH"
     },
-    "source": "chat",
     "message": {
-      "body": "i've only bought 9 pints of ice cream this week",
-      "is_action": false,
-      "user_badges": [
+      "fragments": [
         {
-          "_id": "moderator",
-          "version": "1"
-        },
-        {
-          "_id": "subscriber",
-          "version": "6"
+          "text": "i've only bought 9 pints of ice cream this week"
         }
       ],
-      "user_color": "#541490"
-    },
-    "more_replies": false
+      "userBadges": [
+        {
+          "id": "moderator-1"
+        },
+        {
+          "id": "subscriber-6"
+        }
+      ],
+      "userColor": "#541490"
+    }
   },
   {
     "commenter": {
-      "display_name": "PEEKLE"
+      "displayName": "PEEKLE"
     },
-    "source": "chat",
     "message": {
-      "body": "clintFug clintFug clintFug clintFug clintFug",
-      "emoticons": [
+      "fragments": [
         {
-          "_id": "clintFug",
-          "begin": 0,
-          "end": 7
+          "emote": {
+            "emoteID": "clintFug"
+          },
+          "text": "clintFug"
         },
         {
-          "_id": "clintFug",
-          "begin": 9,
-          "end": 16
+          "text": " "
         },
         {
-          "_id": "clintFug",
-          "begin": 18,
-          "end": 25
+          "emote": {
+            "emoteID": "clintFug"
+          },
+          "text": "clintFug"
         },
         {
-          "_id": "clintFug",
-          "begin": 27,
-          "end": 34
+          "text": " "
         },
         {
-          "_id": "clintFug",
-          "begin": 36,
-          "end": 38
+          "emote": {
+            "emoteID": "clintFug"
+          },
+          "text": "clintFug"
+        },
+        {
+          "text": " "
+        },
+        {
+          "emote": {
+            "emoteID": "clintFug"
+          },
+          "text": "clintFug"
         }
       ],
-      "is_action": false,
-      "user_badges": [
+      "userBadges": [
         {
-          "_id": "vip",
-          "version": "1"
+          "id": "vip-1"
         },
         {
-          "_id": "subscriber",
-          "version": "6"
+          "id": "subscriber-6"
         }
       ],
-      "user_color": "#9ACD32"
-    },
-    "more_replies": false
+      "userColor": "#9ACD32"
+    }
   },
   {
     "commenter": {
-      "display_name": "popesquidward"
+      "displayName": "popesquidward"
     },
-    "source": "chat",
     "message": {
-      "body": "run's dead",
-      "is_action": false,
-      "user_badges": [
+      "fragments": [
         {
-          "_id": "partner",
-          "version": "1"
+          "text": "run's dead"
         }
       ],
-      "user_color": "#00CCC5"
-    },
-    "more_replies": false
+      "userBadges": [
+        {
+          "id": "partner-1"
+        }
+      ],
+      "userColor": "#00CCC5"
+    }
   },
   {
     "commenter": {
-      "display_name": "PrinceLemmy"
+      "displayName": "PrinceLemmy"
     },
-    "source": "chat",
     "message": {
-      "body": "Pog",
-      "is_action": false,
-      "user_color": "#DD6094"
-    },
-    "more_replies": false
+      "fragments": [
+        {
+          "text": "Pog"
+        }
+      ],
+      "userColor": "#DD6094"
+    }
   },
   {
     "commenter": {
-      "display_name": "BadCorgi"
+      "displayName": "BadCorgi"
     },
-    "source": "chat",
     "message": {
-      "body": "I just sent my friend a supportive text and she left me on read PepeHands",
-      "is_action": false,
-      "user_badges": [
+      "fragments": [
         {
-          "_id": "moderator",
-          "version": "1"
+          "text": "I just sent my friend a supportive text and she left me on read PepeHands"
         }
       ],
-      "user_color": "#5B91BF"
-    },
-    "more_replies": false
+      "userBadges": [
+        {
+          "id": "moderator-1"
+        }
+      ],
+      "userColor": "#5B91BF"
+    }
   },
   {
     "commenter": {
-      "display_name": "cairthenn"
+      "displayName": "cairthenn"
     },
-    "source": "chat",
     "message": {
-      "body": "omg hi <3",
-      "is_action": false,
-      "emoticons": [
+      "fragments": [
         {
-          "_id": "9",
-          "begin": 7,
-          "end": 8
-        }
-      ],
-      "user_badges": [
-        {
-          "_id": "moderator",
-          "version": "1"
+          "text": "omg hi "
         },
         {
-          "_id": "subscriber",
-          "version": "6"
+          "emote": {
+            "emoteID": "9"
+          },
+          "text": "<3"
         }
       ],
-      "user_color": "#86E6FB"
-    },
-    "more_replies": false
+      "userBadges": [
+        {
+          "id": "moderator-1"
+        },
+        {
+          "id": "subscriber-6"
+        }
+      ],
+      "userColor": "#86E6FB"
+    }
   },
   {
     "commenter": {
-      "display_name": "prezoh"
+      "displayName": "prezoh"
     },
-    "source": "chat",
     "message": {
-      "body": "anyone else cool as fuck",
-      "is_action": false,
-      "user_badges": [
+      "fragments": [
         {
-          "_id": "broadcaster",
-          "version": "1"
-        },
-        {
-          "_id": "subscriber",
-          "version": "6"
+          "text": "anyone else cool as fuck"
         }
       ],
-      "user_color": "#779C77"
-    },
-    "more_replies": false
+      "userBadges": [
+        {
+          "id": "broadcaster-1"
+        },
+        {
+          "id": "subscriber-6"
+        }
+      ],
+      "userColor": "#779C77"
+    }
   },
   {
     "commenter": {
-      "display_name": "5eferian"
+      "displayName": "5eferian"
     },
-    "source": "chat",
     "message": {
-      "body": "i fucking love malcolm in the middle",
-      "is_action": false,
-      "user_badges": [
+      "fragments": [
         {
-          "_id": "moderator",
-          "version": "1"
-        },
-        {
-          "_id": "subscriber",
-          "version": "1"
+          "text": "i fucking love malcolm in the middle"
         }
       ],
-      "user_color": "#9D9169"
-    },
-    "more_replies": false
+      "userBadges": [
+        {
+          "id": "moderator-1"
+        },
+        {
+          "id": "subscriber-1"
+        }
+      ],
+      "userColor": "#9D9169"
+    }
   },
   {
     "commenter": {
-      "display_name": "TyraniusRex"
+      "displayName": "TyraniusRex"
     },
-    "source": "chat",
     "message": {
-      "body": "the funny thing is...",
-      "is_action": false,
-      "user_badges": [
+      "fragments": [
         {
-          "_id": "moderator",
-          "version": "1"
-        },
-        {
-          "_id": "subscriber",
-          "version": "3"
+          "text": "the funny thing is..."
         }
       ],
-      "user_color": "#DAA520"
-    },
-    "more_replies": false
+      "userBadges": [
+        {
+          "id": "moderator-1"
+        },
+        {
+          "id": "subscriber-3"
+        }
+      ],
+      "userColor": "#DAA520"
+    }
   },
   {
     "commenter": {
-      "display_name": "Marco555"
+      "displayName": "Marco555"
     },
-    "source": "chat",
     "message": {
-      "body": "play nicki dprezoL",
-      "is_action": false,
-      "emoticons": [
+      "fragments": [
         {
-          "_id": "dprezoL",
-          "begin": 11,
-          "end": 18
-        }
-      ],
-      "user_badges": [
-        {
-          "_id": "subscriber",
-          "version": "12"
+          "text": "play nicki "
         },
         {
-          "_id": "bits",
-          "version": "100"
+          "emote": {
+            "emoteID": "dprezoL"
+          },
+          "text": "dprezoL"
         }
       ],
-      "user_color": "#FF4500"
-    },
-    "more_replies": false
+      "userBadges": [
+        {
+          "id": "subscriber-12"
+        },
+        {
+          "id": "bits-100"
+        }
+      ],
+      "userColor": "#FF4500"
+    }
   },
   {
     "commenter": {
-      "display_name": "iTastyBubkiss"
+      "displayName": "iTastyBubkiss"
     },
-    "source": "chat",
     "message": {
-      "body": "i just want dave to hit me :)",
-      "is_action": false,
-      "emoticons": [
+      "fragments": [
         {
-          "_id": "1",
-          "begin": 27,
-          "end": 28
-        }
-      ],
-      "user_badges": [
-        {
-          "_id": "subscriber",
-          "version": "6"
+          "text": "i just want dave to hit me "
         },
         {
-          "_id": "bits-leader",
-          "version": "1"
+          "emote": {
+            "emoteID": "1"
+          },
+          "text": ":)"
         }
       ],
-      "user_color": "#FF0000"
-    },
-    "more_replies": false
+      "userBadges": [
+        {
+          "id": "subscriber-6"
+        },
+        {
+          "id": "bits-leader-1"
+        }
+      ],
+      "userColor": "#FF0000"
+    }
   },
   {
     "commenter": {
-      "display_name": "Brycelol"
+      "displayName": "Brycelol"
     },
-    "source": "chat",
     "message": {
-      "body": "👅 Bubkiss Raid 👅",
-      "is_action": false,
-      "user_badges": [
+      "fragments": [
         {
-          "_id": "subscriber",
-          "version": "3"
-        },
-        {
-          "_id": "bits",
-          "version": "5000"
+          "text": "👅 Bubkiss Raid 👅"
         }
       ],
-      "user_color": "#00F4FF"
-    },
-    "more_replies": false
+      "userBadges": [
+        {
+          "id": "subscriber-3"
+        },
+        {
+          "id": "bits-5000"
+        }
+      ],
+      "userColor": "#00F4FF"
+    }
   }
 ]

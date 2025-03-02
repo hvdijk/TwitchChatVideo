@@ -53,7 +53,10 @@
 
             <Button Content="Make Video" Margin="5" Command="{Binding MakeVideo}" IsEnabled="{Binding Running, Converter={StaticResource NegateBooleanConverter}}"></Button>
             <Button Content="Cancel" Margin="5" Command="{Binding CancelVideo}" IsEnabled="{Binding Running}" Grid.Column="1"></Button>
-            <xctk:WatermarkTextBox Text="{Binding URL}"  Grid.Column="2" Margin="10,5,5,5" Watermark="Enter twitch video URL.."></xctk:WatermarkTextBox>
+            <DockPanel Grid.Column="2" Margin="10,5,5,5">
+                <Button DockPanel.Dock="Right" Command="{Binding SelectVideo}" IsEnabled="{Binding Running, Converter={StaticResource NegateBooleanConverter}}" Content="..."></Button>
+                <xctk:WatermarkTextBox Text="{Binding FileName}" Watermark="Select Twitch video" IsReadOnly="True"></xctk:WatermarkTextBox>
+            </DockPanel>
             <Grid Grid.Row="2" Grid.ColumnSpan="3">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="2*"></RowDefinition>
@@ -124,7 +127,6 @@
                         <Label Content="" HorizontalAlignment="Center" VerticalAlignment="Center"></Label>
                         <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
                             <CheckBox IsChecked="{Binding ShowBadges}" Content="Badges" Margin="0,0,5,0"/>
-                            <CheckBox IsChecked="{Binding VodChat}" Content="Vod Chat" Margin="5,0,0,0"/>
                         </StackPanel>
                     </StackPanel>
                 </Grid>

@@ -65,6 +65,9 @@
     <Reference Include="Accord.Video.FFMPEG, Version=3.8.0.0, Culture=neutral, PublicKeyToken=fa1a88e29555ccf7, processorArchitecture=x86">
       <HintPath>..\packages\Accord.Video.FFMPEG.3.8.0\lib\net462\Accord.Video.FFMPEG.dll</HintPath>
     </Reference>
+    <Reference Include="DirectN, Version=1.17.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\DirectN.1.17.2\lib\net46\DirectN.dll</HintPath>
+    </Reference>
     <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.13.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
@@ -107,11 +110,13 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="DrawableMessage.cs" />
     <Compile Include="Colors.cs" />
     <Compile Include="Emoji.cs" />
     <Compile Include="NativeMethods.cs" />
     <Compile Include="Settings.cs" />
     <Compile Include="TwitchObjects\Bits.cs" />
+    <Compile Include="TwitchObjects\VideoComment.cs" />
     <Compile Include="Views\Converters.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="Views\PreviewWindow.xaml.cs">
@@ -127,7 +132,6 @@
     <Compile Include="TwitchObjects\TwitchEmote.cs" />
     <Compile Include="VideoProgress.cs" />
     <Compile Include="Views\ViewModel.cs" />
-    <Compile Include="TwitchObjects\VodInfo.cs" />
     <Page Include="Views\MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -137,7 +141,6 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="BTTV.cs" />
-    <Compile Include="TwitchObjects\ChatMessage.cs" />
     <Compile Include="TwitchDownloader.cs" />
     <Compile Include="ChatHandler.cs" />
     <Compile Include="FFZ.cs" />
