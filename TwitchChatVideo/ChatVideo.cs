@@ -82,7 +82,7 @@ namespace TwitchChatVideo
                             foreach (var comment in query.Comments)
                             {
                                 messages.Add(chat_handler.MakeDrawableMessage(comment));
-                                progress?.Report(new VideoProgress(messages.Count, query.Comments.Count, VideoProgress.VideoStatus.Rendering));
+                                progress?.Report(new VideoProgress(messages.Count, query.Comments.Count, VideoProgress.VideoStatus.RenderingMessages));
                             }
                             var result = await WriteVideoFrames(VideoOutputFileName, messages, 0, query.Video.LengthInSeconds * FPS, progress, ct);
                             progress?.Report(new VideoProgress(1, 1, VideoProgress.VideoStatus.CleaningUp));
@@ -132,7 +132,7 @@ namespace TwitchChatVideo
                                 return false;
                             }
 
-                            progress?.Report(new VideoProgress(i, end_frame, VideoProgress.VideoStatus.Rendering));
+                            progress?.Report(new VideoProgress(i, end_frame, VideoProgress.VideoStatus.RenderingVideo));
 
                             if (next_message < messages.Count)
                             {

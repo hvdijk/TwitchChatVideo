@@ -21,7 +21,7 @@ namespace TwitchChatVideo
 
             return new Settings()
             {
-                Width = 400,
+                Width = 540,
                 Height = 300,
                 FontSize = 10,
                 FontFamily = (FontFamily)new FontFamilyConverter().ConvertFromString("Arial"),

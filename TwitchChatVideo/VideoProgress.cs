@@ -21,8 +21,10 @@ namespace TwitchChatVideo
             Chat,
             [Description("Determing Drawing Information")]
             Drawing,
+            [Description("Rendering Messages")]
+            RenderingMessages,
             [Description("Rendering Video")]
-            Rendering,
+            RenderingVideo,
             [Description("Cleaning Up Resources")]
             CleaningUp,
         }
